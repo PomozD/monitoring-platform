@@ -27,9 +27,33 @@ func Load() (Config, error) {
 		environment = "development"
 	}
 
-	return Config{
+	config := Config{
 		AppPort:     appPort,
 		DatabaseURL: databaseURL,
 		Environment: environment,
-	}, nil
+	}
+
+	if err := config.Validate(); err != nil {
+		return Config{}, err
+	}
+
+	return config, nil
+}
+
+func (c Config) Validate() error {
+	if c.AppPort == "" {
+		return fmt.Errorf("AUTH_SERVICE_PORT cannot be empty")
+	}
+
+	if c.DatabaseURL == "" {
+		return fmt.Errorf("DATABASE_URL cannot be empty")
+	}
+
+	switch c.Environment {
+	case "development", "testing", "staging", "production":
+	default:
+		return fmt.Errorf("invalid APP_ENV: %s", c.Environment)
+	}
+
+	return nil
 }
