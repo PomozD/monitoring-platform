@@ -4,6 +4,9 @@ bin/
 *.test
 *.out
 
+# services
+**/auth-service
+
 # Environment
 .env
 .env.*
