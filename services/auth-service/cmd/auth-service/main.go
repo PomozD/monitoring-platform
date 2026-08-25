@@ -9,9 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/PomozD/monitoring-platform/services/auth-service/internal/application/auth"
 	"github.com/PomozD/monitoring-platform/services/auth-service/internal/config"
 	"github.com/PomozD/monitoring-platform/services/auth-service/internal/database"
 	"github.com/PomozD/monitoring-platform/services/auth-service/internal/handler"
+	"github.com/PomozD/monitoring-platform/services/auth-service/internal/repository/postgres"
+	"github.com/PomozD/monitoring-platform/services/auth-service/internal/service/password"
 )
 
 func main() {
@@ -30,9 +33,25 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	userRepository := postgres.NewUserRepository(dbPool)
+
+	passwordHasher := password.NewArgon2Hasher()
+
+	registerUser := auth.NewRegisterUser(
+		userRepository,
+		passwordHasher,
+	)
+
+	registerHandler := handler.NewRegisterHandler(registerUser)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", handler.Health)
+
+	mux.Handle(
+		"POST /auth/register",
+		registerHandler,
+	)
 
 	server := &http.Server{
 		Addr:              ":" + cfg.AppPort,
