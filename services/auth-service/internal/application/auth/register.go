@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -56,11 +57,15 @@ func (uc *RegisterUser) Execute(
 		return nil, err
 	}
 
+	now := time.Now()
+
 	user := &domain.User{
 		ID:           uuid.New(),
 		Email:        input.Email,
 		PasswordHash: passwordHash,
 		Status:       domain.UserStatusActive,
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 
 	if err := uc.users.Create(ctx, user); err != nil {
