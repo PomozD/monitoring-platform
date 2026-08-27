@@ -4,8 +4,8 @@ bin/
 *.test
 *.out
 
-# services
-**/auth-service
+# Go binaries
+services/auth-service/auth-service
 
 # Environment
 .env
