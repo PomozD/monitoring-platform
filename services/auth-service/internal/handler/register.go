@@ -2,9 +2,11 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/PomozD/monitoring-platform/services/auth-service/internal/application/auth"
+	"github.com/PomozD/monitoring-platform/services/auth-service/internal/domain"
 )
 
 type RegisterRequest struct {
@@ -37,10 +39,11 @@ func (h *RegisterHandler) ServeHTTP(
 	var request RegisterRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(
+		writeError(
 			w,
-			"invalid request body",
 			http.StatusBadRequest,
+			"INVALID_REQUEST_BODY",
+			"Invalid request body",
 		)
 		return
 	}
@@ -52,12 +55,42 @@ func (h *RegisterHandler) ServeHTTP(
 			Password: request.Password,
 		},
 	)
+
 	if err != nil {
-		http.Error(
-			w,
-			err.Error(),
-			http.StatusBadRequest,
-		)
+		switch {
+		case errors.Is(err, domain.ErrInvalidEmail):
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"INVALID_EMAIL",
+				"Invalid email",
+			)
+
+		case errors.Is(err, domain.ErrInvalidPassword):
+			writeError(
+				w,
+				http.StatusBadRequest,
+				"INVALID_PASSWORD",
+				"Invalid password",
+			)
+
+		case errors.Is(err, domain.ErrUserAlreadyExists):
+			writeError(
+				w,
+				http.StatusConflict,
+				"USER_ALREADY_EXISTS",
+				"User already exists",
+			)
+
+		default:
+			writeError(
+				w,
+				http.StatusInternalServerError,
+				"INTERNAL_SERVER_ERROR",
+				"Internal server error",
+			)
+		}
+
 		return
 	}
 
@@ -67,10 +100,9 @@ func (h *RegisterHandler) ServeHTTP(
 		Status: string(user.Status),
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		return
-	}
+	writeJSON(
+		w,
+		http.StatusCreated,
+		response,
+	)
 }
