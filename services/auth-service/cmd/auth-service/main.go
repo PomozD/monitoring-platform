@@ -44,6 +44,13 @@ func main() {
 
 	registerHandler := handler.NewRegisterHandler(registerUser)
 
+	loginUser := auth.NewLoginUser(
+		userRepository,
+		passwordHasher,
+	)
+
+	loginHandler := handler.NewLoginHandler(loginUser)
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /health", handler.Health)
@@ -51,6 +58,11 @@ func main() {
 	mux.Handle(
 		"POST /auth/register",
 		registerHandler,
+	)
+
+	mux.Handle(
+		"POST /auth/login",
+		loginHandler,
 	)
 
 	server := &http.Server{
